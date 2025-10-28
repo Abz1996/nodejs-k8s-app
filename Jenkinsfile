@@ -2,13 +2,11 @@ pipeline {
     agent any
     
     environment {
-        DOCKER_REGISTRY = 'docker.io'  // or your private registry
+        DOCKER_REGISTRY = 'docker.io'
         DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
-        DOCKER_IMAGE = 'abz1996/nodejs-k8s-app'
+        DOCKER_IMAGE = 'abz1996/nodejs-k8s-app'  // ✅ Your username
         K8S_NAMESPACE = 'nodejs-app'
         K8S_CREDENTIALS_ID = 'kubeconfig-credentials'
-        K8S_MASTER = '50.116.51.141'  // Your K8s Master PUBLIC IP
-        K8S_API = "https://${K8S_MASTER}:6443"
     }
     
     stages {
@@ -77,6 +75,7 @@ pipeline {
                             
                             # Get service details
                             kubectl get svc -n ${K8S_NAMESPACE}
+                            kubectl get pods -n ${K8S_NAMESPACE}
                         """
                     }
                 }
@@ -100,12 +99,10 @@ pipeline {
     
     post {
         success {
-            echo 'Pipeline completed successfully!'
-            slackSend(color: 'good', message: "Deployment succeeded: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}")
+            echo '✅ Pipeline completed successfully!'
         }
         failure {
-            echo 'Pipeline failed!'
-            slackSend(color: 'danger', message: "Deployment failed: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}")
+            echo '❌ Pipeline failed!'
         }
         always {
             echo 'Cleaning up workspace...'
