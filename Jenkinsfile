@@ -9,7 +9,7 @@ pipeline {
         K8S_CREDENTIALS_ID = 'kubeconfig-credentials'
     }
     
-    stages {
+   stages {
         stage('Checkout') {
             steps {
                 echo 'Checking out code from Git...'
@@ -36,8 +36,8 @@ pipeline {
                 echo 'Building Docker image...'
                 script {
                     sh """
-                        dockerImage = docker.build("${DOCKER_IMAGE}:${BUILD_NUMBER}")
-                        docker.build("${DOCKER_IMAGE}:latest")
+                        docker build -t ${DOCKER_IMAGE}:${BUILD_NUMBER} .
+                        docker tag ${DOCKER_IMAGE}:${BUILD_NUMBER} ${DOCKER_IMAGE}:latest
                     """
                 }
             }
@@ -53,9 +53,7 @@ pipeline {
             }
         }
     }
-}      
-
-        
+}         
         stage('Deploy to Kubernetes') {
             steps {
                 echo 'Deploying to Kubernetes...'
