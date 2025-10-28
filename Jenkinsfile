@@ -56,22 +56,29 @@ pipeline {
                 echo 'Deploying to Kubernetes...'
                 script {
                     withKubeConfig([credentialsId: "${K8S_CREDENTIALS_ID}"]) {
-                         sh """
+                        sh """
                             set -e
+                            # Apply namespace
                             kubectl apply -f k8s/namespace.yaml
                     
+                            # Update image in deployment
                             sed -i 's|YOUR_DOCKER_REGISTRY/nodejs-k8s-app:latest|${DOCKER_IMAGE}:${BUILD_NUMBER}|g' k8s/deployment.yaml
                     
+                            # Apply manifests
                             kubectl apply -f k8s/deployment.yaml
                             kubectl apply -f k8s/service.yaml
                     
+                            # Wait for rollout
                             kubectl rollout status deployment/nodejs-app -n ${K8S_NAMESPACE} --timeout=5m
+                    
+                            # Show service & pods
                             kubectl get svc,pods -n ${K8S_NAMESPACE}
-                        """
+                    """
             }
         }
     }
 }
+
 
         stage('Verify Deployment') {
             steps {
