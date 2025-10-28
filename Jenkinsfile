@@ -1,6 +1,6 @@
 pipeline {
     agent any
-    
+
     environment {
         DOCKER_REGISTRY = 'docker.io'
         DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
@@ -8,81 +8,77 @@ pipeline {
         K8S_NAMESPACE = 'nodejs-app'
         K8S_CREDENTIALS_ID = 'kubeconfig-credentials'
     }
-    
-   stages {
+
+    stages {
         stage('Checkout') {
             steps {
                 echo 'Checking out code from Git...'
                 checkout scm
             }
         }
-        
+
         stage('Build') {
             steps {
                 echo 'Installing dependencies...'
                 sh 'cd app && npm install'
             }
         }
-        
+
         stage('Test') {
             steps {
                 echo 'Running tests...'
                 sh 'cd app && npm test'
             }
         }
-        
-     
- 
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    dockerImage = docker.build("${IMAGE_NAME}:${env.BUILD_NUMBER}")
-                }
-            }
-        }
 
-        stage('Push to DockerHub') {
+        stage('Docker Build') {
             steps {
+                echo 'Building Docker image...'
                 script {
-                    docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS) {
-                        dockerImage.push()
-                        dockerImage.push("latest")
-                    }
+                    dockerImage = docker.build("${DOCKER_IMAGE}:${BUILD_NUMBER}")
+                    docker.build("${DOCKER_IMAGE}:latest")
                 }
             }
         }
-        stage('Deploy to Kubernetes') {
+        stage('Docker Push') {
             steps {
-                echo 'Deploying to Kubernetes...'
-                sh """
-                    # Test connection
-                    kubectl cluster-info
-                    kubectl get nodes
-                    
-                    # Create namespace if not exists
-                    kubectl get namespace ${K8S_NAMESPACE} || kubectl create namespace ${K8S_NAMESPACE}
-                    
-                    # Update deployment file with new image
-                    sed -i 's|YOUR_DOCKER_REGISTRY/nodejs-k8s-app:latest|${DOCKER_IMAGE}:${BUILD_NUMBER}|g' k8s/deployment.yaml
-                    sed -i 's|BUILD_NUMBER|${BUILD_NUMBER}|g' k8s/deployment.yaml
-                    
-                    # Apply manifests
-                    kubectl apply -f k8s/deployment.yaml
-                    kubectl apply -f k8s/service.yaml
-                    
-                    # Wait for rollout to complete
-                    kubectl rollout status deployment/nodejs-app -n ${K8S_NAMESPACE} --timeout=5m
-                    
-                    # Show deployment status
-                    kubectl get pods -n ${K8S_NAMESPACE}
-                    kubectl get svc -n ${K8S_NAMESPACE}
-                    
-                    echo "✅ Deployment completed!"
-                """
+                echo 'Pushing Docker image to Docker Hub...'
+                script {
+                    docker.withRegistry("https://index.docker.io/v1/", "${DOCKER_CREDENTIALS_ID}") {
+                        dockerImage.push("${BUILD_NUMBER}")
+                        dockerImage.push("latest")
             }
         }
-        
-        stage('Verify Deployment') {
+    }
+}   
+stage('Deploy to Kubernetes') {
+    steps {
+        echo 'Deploying to Kubernetes...'
+        sh """
+            # Test connection
+            kubectl cluster-info
+            
+            # Apply namespace
+            kubectl apply -f k8s/namespace.yaml
+            
+            # Update deployment
+            sed -i 's|YOUR_DOCKER_REGISTRY/nodejs-k8s-app:latest|${DOCKER_IMAGE}:${BUILD_NUMBER}|g' k8s/deployment.yaml
+            sed -i 's|BUILD_NUMBER|${BUILD_NUMBER}|g' k8s/deployment.yaml
+            
+            # Deploy
+            kubectl apply -f k8s/deployment.yaml
+            kubectl apply -f k8s/service.yaml
+            
+            # Wait for rollout
+            kubectl rollout status deployment/nodejs-app -n ${K8S_NAMESPACE} --timeout=5m
+            
+            # Show results
+            kubectl get pods -n ${K8S_NAMESPACE}
+            kubectl get svc -n ${K8S_NAMESPACE}
+        """
+    }
+}
+stage('Verify Deployment') {
             steps {
                 echo 'Verifying deployment...'
                 sh """
@@ -119,7 +115,4 @@ pipeline {
             cleanWs()
         }
     }
-}
-        
-    
-    
+}   
