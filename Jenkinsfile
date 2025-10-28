@@ -79,20 +79,23 @@ pipeline {
     }
 }
 
-        stage('Verify Deployment') {
-            steps {
-                echo 'Verifying deployment...'
-                script {
-                    withKubeConfig([credentialsId: "${K8S_CREDENTIALS_ID}"]) {
-                        sh """
-                            kubectl get pods -n ${K8S_NAMESPACE}
-                            kubectl get svc -n ${K8S_NAMESPACE}
-                        """
-                    }
-                }
-            }
-        }
+       stage('Verify Deployment') {
+    steps {
+        echo 'Verifying deployment...'
+        sh """
+            echo "=== Pods ==="
+            kubectl get pods -n ${K8S_NAMESPACE}
+            
+            echo ""
+            echo "=== Services ==="
+            kubectl get svc -n ${K8S_NAMESPACE}
+            
+            echo ""
+            echo "=== Deployment Status ==="
+            kubectl get deployment -n ${K8S_NAMESPACE}
+        """
     }
+}
     
     post {
         success {
