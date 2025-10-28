@@ -36,8 +36,8 @@ pipeline {
                 echo 'Building Docker image...'
                 script {
                     sh """
-                        docker build -t ${DOCKER_IMAGE}:${BUILD_NUMBER} .
-                        docker tag ${DOCKER_IMAGE}:${BUILD_NUMBER} ${DOCKER_IMAGE}:latest
+                        dockerImage = docker.build("${DOCKER_IMAGE}:${BUILD_NUMBER}")
+                        docker.build("${DOCKER_IMAGE}:latest")
                     """
                 }
             }
