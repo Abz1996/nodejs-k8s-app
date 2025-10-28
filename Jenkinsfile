@@ -40,19 +40,17 @@ pipeline {
                 }
             }
         }
-        
         stage('Docker Push') {
             steps {
-                echo 'Pushing Docker image to registry...'
+                echo 'Pushing Docker image to Docker Hub...'
                 script {
-                    docker.withRegistry("https://${DOCKER_REGISTRY}", "${DOCKER_CREDENTIALS_ID}") {
+                    docker.withRegistry("https://index.docker.io/v1/", "${DOCKER_CREDENTIALS_ID}") {
                         dockerImage.push("${BUILD_NUMBER}")
                         dockerImage.push("latest")
-                    }
-                }
             }
         }
-        
+    }
+}      
         stage('Deploy to Kubernetes') {
             steps {
                 echo 'Deploying to Kubernetes...'
