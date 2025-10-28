@@ -31,29 +31,26 @@ pipeline {
             }
         }
         
-        stage('Docker Build') {
+       
+    stages {
+        stage('Build Docker Image') {
             steps {
-                echo 'Building Docker image...'
                 script {
-                    sh """
-                        docker build -t ${DOCKER_IMAGE}:${BUILD_NUMBER} .
-                        docker tag ${DOCKER_IMAGE}:${BUILD_NUMBER} ${DOCKER_IMAGE}:latest
-                    """
+                    dockerImage = docker.build("${IMAGE_NAME}:${env.BUILD_NUMBER}")
                 }
             }
         }
-        
-        stage('Docker Push') {
+
+        stage('Push to DockerHub') {
             steps {
-                echo 'Pushing Docker image to Docker Hub...'
                 script {
-                    docker.withRegistry("https://index.docker.io/v1/", "${DOCKER_CREDENTIALS_ID}") {
-                        dockerImage.push("${BUILD_NUMBER}")
+                    docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS) {
+                        dockerImage.push()
                         dockerImage.push("latest")
+                    }
+                }
             }
         }
-    }
-}         
         stage('Deploy to Kubernetes') {
             steps {
                 echo 'Deploying to Kubernetes...'
