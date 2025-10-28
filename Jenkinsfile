@@ -7,6 +7,8 @@ pipeline {
         DOCKER_IMAGE = 'your-dockerhub-username/nodejs-k8s-app'
         K8S_NAMESPACE = 'nodejs-app'
         K8S_CREDENTIALS_ID = 'kubeconfig-credentials'
+        K8S_MASTER = '50.116.51.141'  // Your K8s Master PUBLIC IP
+        K8S_API = "https://${K8S_MASTER}:6443"
     }
     
     stages {
