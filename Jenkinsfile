@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKER_REGISTRY = 'docker.io'  // or your private registry
         DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
-        DOCKER_IMAGE = 'your-dockerhub-username/nodejs-k8s-app'
+        DOCKER_IMAGE = 'abz1996/nodejs-k8s-app'
         K8S_NAMESPACE = 'nodejs-app'
         K8S_CREDENTIALS_ID = 'kubeconfig-credentials'
         K8S_MASTER = '50.116.51.141'  // Your K8s Master PUBLIC IP
