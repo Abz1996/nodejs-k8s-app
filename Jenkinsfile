@@ -2,8 +2,11 @@ pipeline {
     agent any
     
     environment {
-        DOCKER_IMAGE = 'abz1996/nodejs-k8s-app'
+        DOCKER_REGISTRY = 'docker.io'
+        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
+        DOCKER_IMAGE = 'abz1996/nodejs-k8s-app'  // ✅ Your username
         K8S_NAMESPACE = 'nodejs-app'
+        K8S_CREDENTIALS_ID = 'kubeconfig-credentials'
     }
     
     stages {
@@ -44,15 +47,14 @@ pipeline {
             steps {
                 echo 'Pushing Docker image to Docker Hub...'
                 script {
-                    docker.withRegistry('https://docker.io', 'docker-hub-credentials') {
-                        sh """
-                            docker push ${DOCKER_IMAGE}:${BUILD_NUMBER}
-                            docker push ${DOCKER_IMAGE}:latest
-                        """
-                    }
-                }
+                    docker.withRegistry("https://index.docker.io/v1/", "${DOCKER_CREDENTIALS_ID}") {
+                        dockerImage.push("${BUILD_NUMBER}")
+                        dockerImage.push("latest")
             }
         }
+    }
+}      
+
         
         stage('Deploy to Kubernetes') {
             steps {
