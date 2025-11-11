@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKER_REGISTRY = 'docker.io'
         DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
-        DOCKER_IMAGE = 'abz1996/nodejs-k8s-app'  // ✅ Your username
+        DOCKER_IMAGE = 'abz1996/nodejs-k8s-app-1'  // ✅ Your username
         K8S_NAMESPACE = 'nodejs-app'
         K8S_CREDENTIALS_ID = 'kubeconfig-credentials'
     }
