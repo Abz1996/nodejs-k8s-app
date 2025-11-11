@@ -85,26 +85,39 @@ pipeline {
             }
         }
         
-        stage('Verify Deployment') {
+    stage('Verify Deployment') {
             steps {
                 echo 'Verifying deployment...'
-                sh """
-                    echo "=== Pods ==="
-                    kubectl get pods -n ${K8S_NAMESPACE} -o wide
-                    
-                    echo ""
-                    echo "=== Services ==="
-                    kubectl get svc -n ${K8S_NAMESPACE}
-                    
-                    echo ""
-                    echo "=== Deployment Status ==="
-                    kubectl get deployment -n ${K8S_NAMESPACE}
-                    
-                    echo ""
-                    echo "=== Application Info ==="
-                    echo "Service Type: LoadBalancer"
-                    echo "NodePort: \$(kubectl get svc nodejs-app-service -n ${K8S_NAMESPACE} -o jsonpath='{.spec.ports[0].nodePort}')"
-                """
+                script {
+                    withKubeConfig([credentialsId: "${K8S_CREDENTIALS_ID}"]) {
+                        sh """
+                            echo "=== Pods ==="
+                            kubectl get pods -n ${K8S_NAMESPACE} -o wide
+                            
+                            echo ""
+                            echo "=== Services ==="
+                            kubectl get svc -n ${K8S_NAMESPACE}
+                            
+                            echo ""
+                            echo "=== Deployment Status ==="
+                            kubectl get deployment -n ${K8S_NAMESPACE}
+                            
+                            echo ""
+                            echo "=== Application Info ==="
+                            echo "Service Type: LoadBalancer"
+                            echo "NodePort: \$(kubectl get svc nodejs-app-service -n ${K8S_NAMESPACE} -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || echo 'Service not found')"
+                            
+                            echo ""
+                            echo "=== Pod Logs (last 20 lines) ==="
+                            POD_NAME=\$(kubectl get pods -n ${K8S_NAMESPACE} -l app=nodejs-app -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+                            if [ -n "\$POD_NAME" ]; then
+                                kubectl logs \$POD_NAME -n ${K8S_NAMESPACE} --tail=20
+                            else
+                                echo "No pods found"
+                            fi
+                        """
+                    }
+                }
             }
         }
     }
